@@ -7,6 +7,7 @@ const QrSessionSchema = new Schema<IQrSession>({
   workspaceId: {
     type: mongoose.Types.ObjectId,
     ref: "Workspace",
+    required: true,
   },
   token: {
     // Random Hash

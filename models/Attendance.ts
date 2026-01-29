@@ -6,16 +6,18 @@ const attendanceSchema = new Schema<IAttendance>({
   userId: {
     type: mongoose.Types.ObjectId,
     ref: "User",
+    required: true,
     index: true,
   },
   workspaceId: {
     type: mongoose.Types.ObjectId,
     ref: "Workspace",
+    required: true,
     index: true,
   },
-  date: {
+  attendanceDate: {
     type: String,
-    index: true,
+    required: true,
   },
   checkIn: {
     timestamp: { type: Date, required: true },
@@ -29,13 +31,16 @@ const attendanceSchema = new Schema<IAttendance>({
   totalMinutes: { type: Number, default: 0 },
 });
 
-attendanceSchema.index({ userId: 1, date: 1 });
-attendanceSchema.index({ workspaceId: 1, date: 1 });
+attendanceSchema.index({ workspaceId: 1, attendanceDate: 1 });
 attendanceSchema.index(
   { workspaceId: 1 },
   {
     partialFilterExpression: { checkOut: { $exists: false } },
   },
+);
+attendanceSchema.index(
+  { userId: 1, workspaceId: 1, attendanceDate: 1 },
+  { unique: true },
 );
 
 const Attendance =

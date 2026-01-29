@@ -24,10 +24,17 @@ const workspaceSchema = new Schema<IWorkspace>({
     },
   },
 
-  radiusInMeters: Number,
-  qrRotationSeconds: Number,
+  radiusInMeters: {
+    type: Number,
+    required: true,
+  },
+  qrRotationSeconds: {
+    type: Number,
+    required: true,
+  },
 });
 
+workspaceSchema.index({ ownerId: 1 });
 workspaceSchema.index({ location: "2dsphere" });
 
 const Workspace =

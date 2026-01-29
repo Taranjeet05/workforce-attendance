@@ -9,13 +9,11 @@ export enum UserRole {
 }
 
 export interface IUser {
-  // name // email // role // workSpaceId // active // createdAt // updatedAt
+  // name // email // image // createdAt // updatedAt
   _id?: Types.ObjectId;
   name: string;
   email: string;
-  role: UserRole;
-  workspaceId: Types.ObjectId;
-  active: boolean;
+  image?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,12 +31,24 @@ export interface IWorkspace {
   qrRotationSeconds: number;
 }
 
-export interface IAttendance {
-  // id // userId // workspaceId // date // checkIn {timestamp location isVerified} // checkOut {timestamp, location} // totalMinutes
+export interface IWorkspaceMember {
+  //id // userId // WorkspaceId // role // active // invitedBy // joinedAt
   _id?: Types.ObjectId;
   userId: Types.ObjectId;
   workspaceId: Types.ObjectId;
-  date: string;
+  role: UserRole;
+  active: boolean;
+  invitedBy?: Types.ObjectId; // Who invited this user (OWNER / MANAGER)
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IAttendance {
+  // id // userId // workspaceId // attendanceDate // checkIn {timestamp location isVerified} // checkOut {timestamp, location} // totalMinutes
+  _id?: Types.ObjectId;
+  userId: Types.ObjectId;
+  workspaceId: Types.ObjectId;
+  attendanceDate: string;
   checkIn: {
     timestamp: Date;
     location: [number, number];
@@ -48,7 +58,7 @@ export interface IAttendance {
     timestamp: Date;
     location: [number, number];
   };
-  totalMinutes: number;
+  totalMinutes?: number;
 }
 
 export interface IQrSession {
