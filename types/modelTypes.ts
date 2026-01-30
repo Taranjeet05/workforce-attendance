@@ -23,6 +23,7 @@ export interface IWorkspace {
   _id?: Types.ObjectId;
   name: string;
   ownerId: Types.ObjectId;
+  timezone: string; // Add ("America/New_York", "Asia/New-Delhi")
   location: {
     type: "Point";
     coordinates: [number, number];

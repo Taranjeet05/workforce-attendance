@@ -12,6 +12,11 @@ const workspaceSchema = new Schema<IWorkspace>({
     ref: "User",
     required: true,
   },
+  timezone: {
+    type: String,
+    required: true,
+    default: "UTC",
+  },
   location: {
     type: {
       type: String,

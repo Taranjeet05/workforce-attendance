@@ -43,6 +43,22 @@ attendanceSchema.index(
   { unique: true },
 );
 
+attendanceSchema.pre("save", function () {
+  if (!this.isModified("checkIn") && !this.isModified("checkOut")) {
+    return;
+  }
+
+  if (!this.checkIn?.timestamp || !this.checkOut?.timestamp) {
+    this.totalMinutes = 0;
+    return;
+  }
+
+  const diffInMs =
+    this.checkOut.timestamp.getTime() - this.checkIn.timestamp.getTime();
+
+  this.totalMinutes = Math.max(0, Math.round(diffInMs / 60000));
+});
+
 const Attendance =
   models.Attendance || model<IAttendance>("Attendance", attendanceSchema);
 export default Attendance;
