@@ -1,64 +1,60 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import clientPromise from "../mongodb";
-import Resend from "next-auth/providers/resend";
 import { connectToDatabase } from "../db";
 import User from "@/models/User";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(clientPromise),
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
-    signIn: "/auth/sign-in", // Fixed Path
-    error: "/auth/auth-error", // Always define an error page
-    verifyRequest: "/auth/auth-success", // define a success page
+    signIn: "/auth/sign-in",
+    error: "/auth/auth-error",
   },
-
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true, // Allow linking of users magic link + google
-    }),
-    Resend({
-      apiKey: process.env.RESEND_API_KEY,
-      from: process.env.EMAIL_FROM,
+      //! Force account selection to avoid "auto-login" loops during testing
+      authorization: { params: { prompt: "select_account" } },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async signIn({ user, account, profile }): Promise<string | boolean> {
+      if (account?.provider !== "google") return false;
+
+      try {
+        await connectToDatabase();
+        let dbUser = await User.findOne({ email: user.email });
+
+        if (!dbUser) {
+          const defaultImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email ?? "default")}`;
+          dbUser = await User.create({
+            email: user.email,
+            name: profile?.name ?? user.name,
+            image: (profile as { picture?: string })?.picture ?? defaultImage,
+          });
+        }
+
+        user.id = dbUser._id.toString();
+
+        return true;
+      } catch (error) {
+        console.error("[AUTH] Database error:", error);
+        return "/auth/auth-error?error=DatabaseError";
+      }
+    },
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.image = user.image;
-      }
-
-      if (trigger === "update") {
-        await connectToDatabase();
-
-        const dbUser = await User.findOne({ email: token.email }).lean();
-
-        if (dbUser) {
-          token.name = dbUser.name;
-          token.image = dbUser.image;
-        }
       }
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-        session.user.name = token.name;
-        session.user.email = token.email as string;
-        session.user.image = token.image;
-      }
+      session.user.id = token.id as string;
       return session;
     },
   },

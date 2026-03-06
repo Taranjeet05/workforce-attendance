@@ -1,50 +1,24 @@
 "use server";
 
-import User from "@/models/User";
-import { connectToDatabase } from "../db";
-import { auth, signIn, signOut } from "./authConfig";
+import { signIn, signOut } from "./authConfig";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
-export async function loginWithGoogle() {
-  await signIn("google", { redirectTo: "/dashboard" });
-}
-
-export async function loginWithEmail(formData: FormData) {
-  const email = formData.get("email") as string;
-  await signIn("resend", { email, redirectTo: "/dashboard" });
-}
-
-export async function handleSignOut() {
-  await signOut({ redirectTo: "/auth/sign-in" });
-}
-
-export async function completeProfile(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user?.email || !session?.user.id)
-    return { error: "Unauthorized. Please sign in again." };
-
-  const name = formData.get("name") as string;
-  if (!name || name.length < 2) {
-    return { error: "Name is required and must be at least 2 characters." };
-  }
-
-  const defaultImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(session.user.email)}`;
-
+export async function loginWithGoogle(): Promise<void> {
   try {
-    await connectToDatabase();
-    const updateUser = await User.findOneAndUpdate(
-      { email: session.user.email },
-      {
-        name,
-        image: defaultImage,
-      },
-    );
-    if (!updateUser) {
-      return { error: "User not found in database." };
-    }
-    return { success: true };
+    await signIn("google", { redirectTo: "/dashboard" });
   } catch (error) {
-    console.error("Database update failed", error);
-    return { error: "Failed to update profile. Please try again." };
+    if (isRedirectError(error)) throw error;
+    console.error("[AUTH] Google sign-in failed:", error);
+    throw new Error("Sign-in failed. Please try again.");
+  }
+}
+
+export async function handleSignOut(): Promise<void> {
+  try {
+    await signOut({ redirectTo: "/auth/sign-in" });
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    console.error("[AUTH] Sign-out failed:", error);
+    throw new Error("Sign-out failed. Please try again.");
   }
 }

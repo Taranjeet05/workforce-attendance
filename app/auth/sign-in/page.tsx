@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/authConfig";
 import { redirect } from "next/navigation";
-import EmailSignIn from "../EmailSignIn";
-import GoogleSignIn from "../GoogleSignIn";
+import EmailSignIn from "./EmailSignIn";
+import GoogleSignIn from "./GoogleSignIn";
 
 export default async function SignInPage() {
   const session = await auth();
